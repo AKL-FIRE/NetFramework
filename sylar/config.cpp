@@ -6,7 +6,6 @@
 
 namespace sylar {
 
-Config::ConfigVarMap Config::s_data;
 
 // "A.B", 10
 /*
@@ -55,7 +54,7 @@ void Config::LoadFromYAML(const YAML::Node &root) {
 }
 
 ConfigVarBase::ptr Config::LookupBase(const std::string &name) {
-  auto it = s_data.find(name);
-  return it == s_data.end() ? nullptr : it->second;
+  auto it = Config::GetDatas().find(name);
+  return it == Config::GetDatas().end() ? nullptr : it->second;
 }
 }

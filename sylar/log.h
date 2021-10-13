@@ -43,6 +43,7 @@
 #define SYLAR_LOG_FMT_FATAL(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::FATAL, fmt, __VA_ARGS__)
 
 #define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
+#define SYLAR_LOG_NAME(name) sylar::LoggerMgr::GetInstance()->getLogger(name)
 
 namespace sylar {
 
@@ -61,6 +62,7 @@ class LogLevel {
   };
 
   static const char* toString(LogLevel::Level level);
+  static LogLevel::Level fromString(const std::string& str);
 };
 
 class LogEvent {
@@ -108,6 +110,8 @@ class LogFormatter {
   using ptr = std::shared_ptr<LogFormatter>;
   explicit LogFormatter(const std::string& pattern);
   void init();
+  bool isError() const {return m_error;}
+  const std::string& getPattern() const {return m_pattern;}
 
   // %t \t  %threadId %m %n
   std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
@@ -124,6 +128,7 @@ class LogFormatter {
  private:
   std::string m_pattern;
   std::vector<FormatItem::ptr> m_items;
+  bool m_error = false;
 };
 
 
@@ -134,6 +139,7 @@ class LogAppender {
   virtual ~LogAppender() = default;
 
   virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+  virtual std::string toYamlString() = 0;
 
   void setFormatter(LogFormatter::ptr val) {m_formatter = std::move(val);}
   LogFormatter::ptr getFormatter() const {return m_formatter;}
@@ -146,12 +152,13 @@ class LogAppender {
 
 // 日志器
  class Logger : public std::enable_shared_from_this<Logger> {
+   friend class LoggerManager;
  public:
   using ptr = std::shared_ptr<Logger>;
 
   explicit Logger(std::string  name = "root");
 
-  void log(LogLevel::Level level, const LogEvent::ptr event);
+  void log(LogLevel::Level level, const LogEvent::ptr& event);
 
   void debug(LogEvent::ptr event);
   void info(LogEvent::ptr event);
@@ -161,15 +168,23 @@ class LogAppender {
 
   void addAppender(LogAppender::ptr appender);
   void deleteAppender(LogAppender::ptr appender);
+  void clearAppender();
   LogLevel::Level getLevel() const {return m_level;}
   void setLevel(LogLevel::Level level) {m_level = level;}
   std::string getName() const {return m_name;}
+
+  void setFormatter(LogFormatter::ptr val);
+  void setFormatter(const std::string& val);
+  LogFormatter::ptr getFormatter();
+
+  std::string toYamlString();
 
  private:
   std::string m_name;          // 日志名称
   LogLevel::Level m_level;     // 日志级别
   std::list<LogAppender::ptr> m_appenders; // Appender集合
   LogFormatter::ptr m_logformatter;
+  Logger::ptr m_root;
 };
 
 // 输出到控制台的appender
@@ -177,6 +192,7 @@ class StdoutLogAppender : public LogAppender {
  public:
   using ptr = std::shared_ptr<StdoutLogAppender>;
   void log(std::shared_ptr<Logger> logger, LogLevel::Level level, const LogEvent::ptr event) override;
+  std::string toYamlString() override;
 };
 
 // 输出到文件的appender
@@ -186,6 +202,7 @@ class FileLogAppender : public LogAppender {
   explicit FileLogAppender(const std::string& filename);
   void log(std::shared_ptr<Logger> logger, LogLevel::Level level, const LogEvent::ptr event) override;
 
+  std::string toYamlString() override;
   // 重新打开文件,打开成功返回true
   bool reopen();
  private:
@@ -199,6 +216,7 @@ class LoggerManager {
   Logger::ptr getLogger(const std::string& name);
   void init();
   Logger::ptr getRoot() const {return m_root;}
+  std::string toYamlString();
  private:
   std::map<std::string, Logger::ptr> m_loggers;
   Logger::ptr m_root;

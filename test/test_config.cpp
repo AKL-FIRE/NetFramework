@@ -52,7 +52,7 @@ void print_yaml(const YAML::Node& node, int level) {
 }
 
 void test_yaml() {
-  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log.yml");
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/test.yml");
   print_yaml(root, 0);
   SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root;
 }
@@ -86,7 +86,7 @@ void test_config() {
   XX_M(g_str_int_map_value_config, str_int_map, before);
   XX_M(g_str_int_unordered_map_value_config, str_int_unordered_map, before);
 
-  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log.yml");
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/test.yml");
   sylar::Config::LoadFromYAML(root);
 
   SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
@@ -166,9 +166,9 @@ void test_class() {
   {                          \
   	auto m = g_person_map->getValue(); \
   	for(auto& i : m) {        \
-    	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << prefix << ": " << i.first << " - " << i.second.toString();                         \
+    	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << (prefix) << ": " << i.first << " - " << i.second.toString();                         \
   	}                         \
-  	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << prefix << ": size=" << m.size();                           \
+  	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << (prefix) << ": size=" << m.size();                           \
   }
 
   g_person->addListener(1, [](const Person& old_value, const Person& new_value) {
@@ -177,16 +177,30 @@ void test_class() {
 
   XX_PM(g_person_map, "class.map before");
 
-  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log.yml");
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/test.yml");
   sylar::Config::LoadFromYAML(root);
 
   SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_person->getValue().toString() << " - " << g_person->toString();
   XX_PM(g_person_map, "class.map after");
 }
 
+void test_log() {
+  static sylar::Logger::ptr system_log = SYLAR_LOG_NAME("system");
+  SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+  std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log.yml");
+  sylar::Config::LoadFromYAML(root);
+  std::cout << "==========================" << std::endl;
+  std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+  std::cout << "==========================" << std::endl;
+  std::cout << root << std::endl;
+  SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
   // test_yaml();
   // test_config();
-  test_class();
+  // test_class();
+  test_log();
   return 0;
 }
