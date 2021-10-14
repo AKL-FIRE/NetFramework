@@ -166,7 +166,7 @@ void Logger::fatal(LogEvent::ptr event) {
 
 void Logger::addAppender(LogAppender::ptr appender) {
    if (!appender->getFormatter()) {
-     appender->setFormatter(m_logformatter);
+     appender->m_formatter = m_logformatter;
    }
   m_appenders.push_back(appender);
 }
@@ -183,7 +183,13 @@ void Logger::clearAppender() {
 }
 
 void Logger::setFormatter(LogFormatter::ptr val) {
-  m_logformatter = val;
+  m_logformatter = std::move(val);
+
+  for (auto& i : m_appenders) {
+    if (!i->m_hasFormatter) {
+      i->m_formatter = m_logformatter;
+    }
+  }
 }
 
 void Logger::setFormatter(const std::string& val) {
@@ -192,7 +198,8 @@ void Logger::setFormatter(const std::string& val) {
     std::cout << "Logger setFormatter name=" << m_name << " value=" << val << " invalid formatter" << std::endl;
 	return;
   }
-  m_logformatter = new_val;
+  // m_logformatter = new_val;
+  setFormatter(new_val);
 }
 
 LogFormatter::ptr Logger::getFormatter() {
@@ -249,7 +256,7 @@ std::string FileLogAppender::toYamlString() {
   node["file"] = m_filename;
   if (m_level != LogLevel::UNKNOW)
 	node["level"] = LogLevel::toString(m_level);
-  if (m_formatter) {
+  if (m_formatter && m_hasFormatter) {
     node["formatter"] = m_formatter->getPattern();
   }
   std::stringstream ss;
@@ -268,7 +275,7 @@ std::string StdoutLogAppender::toYamlString() {
   node["type"] = "StdoutLogAppender";
   if (m_level != LogLevel::UNKNOW)
 	node["level"] = LogLevel::toString(m_level);
-  if (m_formatter) {
+  if (m_formatter && m_hasFormatter) {
 	node["formatter"] = m_formatter->getPattern();
   }
   std::stringstream ss;
@@ -671,6 +678,14 @@ struct LogIniter {
 			  break;
 		  }
 		  ap->setLevel(a.level);
+		  if (!a.formatter.empty()) {
+		    auto fmt = std::make_shared<LogFormatter>(a.formatter);
+		    if (!fmt->isError()) {
+		      ap->setFormatter(fmt);
+		    } else {
+		      std::cout << "log.name=" << i.name << " appender type=" << a.type << " formatter=" << a.formatter << " is valid" << std::endl;
+		    }
+		  }
 		  logger->addAppender(ap);
 		}
 	  }
@@ -703,4 +718,8 @@ std::string LoggerManager::toYamlString() {
   return ss.str();
 }
 
+void LogAppender::setFormatter(LogFormatter::ptr val) {
+  m_formatter = std::move(val);
+  m_hasFormatter = m_formatter ? true : false;
+}
 }
