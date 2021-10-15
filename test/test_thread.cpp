@@ -22,21 +22,37 @@ void fun1() {
   }
 }
 
+[[noreturn]]
 void fun2() {
+  while (true) {
+	SYLAR_LOG_INFO(g_logger) << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  }
+}
 
+[[noreturn]]
+void fun3() {
+  while(true) {
+	SYLAR_LOG_INFO(g_logger) << "===========================================";
+  }
 }
 
 int main(int argc, char* argv[]) {
   SYLAR_LOG_INFO(g_logger) << "thread test begin";
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log2.yml");
+  sylar::Config::LoadFromYAML(root);
+
   std::vector<sylar::Thread::ptr> threads;
-  for (int i = 0; i < 5; ++i) {
-    auto thr = std::make_shared<sylar::Thread>(fun1, "name_" + std::to_string(i));
-    threads.push_back(thr);
+  for (int i = 0; i < 2; ++i) {
+    auto thr1 = std::make_shared<sylar::Thread>(fun2, "name_" + std::to_string(i * 2));
+	auto thr2 = std::make_shared<sylar::Thread>(fun3, "name_" + std::to_string(i * 2 + 1));
+	threads.push_back(thr1);
+	threads.push_back(thr2);
   }
 
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < threads.size(); ++i) {
     threads[i]->join();
   }
   SYLAR_LOG_INFO(g_logger) << "thread test end";
   SYLAR_LOG_INFO(g_logger) << "count=" << count;
+
 }

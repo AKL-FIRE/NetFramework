@@ -7,7 +7,6 @@
 
 // pthread
 // std::thread -> pthread
-#include "log.h"
 #include "util.h"
 
 #include <pthread.h>
@@ -17,6 +16,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <atomic>
 
 namespace sylar {
 
@@ -69,7 +69,6 @@ struct ScopedLockImpl {
 
 class Mutex {
  public:
-
   using Lock = ScopedLockImpl<Mutex>;
 
   Mutex() {
@@ -90,6 +89,15 @@ class Mutex {
 
  private:
   pthread_mutex_t m_mutex;
+};
+
+class NullMutex {
+ public:
+  using Lock = ScopedLockImpl<Mutex>;
+  NullMutex() = default;
+  ~NullMutex() = default;
+  void lock() {};
+  void unlock() {};
 };
 
 template<typename T>
@@ -122,6 +130,7 @@ struct ReadScopedLockImpl {
   T& m_mutex;
   bool m_locked;
 };
+
 
 template<typename T>
 struct WriteScopedLockImpl {
@@ -184,6 +193,65 @@ class RWMutex {
   pthread_rwlock_t m_lock;
 };
 
+class NullRWMutex {
+ public:
+  using ReadLock = ReadScopedLockImpl<NullRWMutex>;
+  using WriteLock = WriteScopedLockImpl<NullRWMutex>;
+
+  NullRWMutex() = default;
+  ~NullRWMutex() = default;
+
+  void rdlock() {}
+  void wrlock() {}
+  void unlock() {}
+};
+
+class SpinLock {
+ public:
+  using Lock = ScopedLockImpl<SpinLock>;
+  SpinLock() {
+	pthread_spin_init(&m_mutex, 0);
+  }
+
+  ~SpinLock() {
+	pthread_spin_destroy(&m_mutex);
+  }
+
+  void lock() {
+	pthread_spin_lock(&m_mutex);
+  }
+
+  void unlock() {
+	pthread_spin_unlock(&m_mutex);
+  }
+
+ private:
+  pthread_spinlock_t m_mutex;
+};
+
+class CASLock {
+ public:
+  using Lock = ScopedLockImpl<CASLock>;
+  CASLock() {
+    m_mutex.clear();
+  }
+
+  ~CASLock() {
+  }
+
+  void lock() {
+    // 一直自旋，直到取得锁(m_mutex)
+	while (std::atomic_flag_test_and_set_explicit(&m_mutex, std::memory_order_acquire));
+  }
+
+  void unlock() {
+    std::atomic_flag_clear_explicit(&m_mutex, std::memory_order_release);
+  }
+
+ private:
+  volatile std::atomic_flag m_mutex;
+};
+
 class Thread {
  public:
   using ptr = std::shared_ptr<Thread>;
@@ -199,7 +267,7 @@ class Thread {
   static void SetName(const std::string& name);
 
   Thread(const Thread&) = delete;
-  Thread(Thread&&) = default;
+  Thread(Thread&&) = delete;
   Thread& operator=(const Thread&) = delete;
 
  private:

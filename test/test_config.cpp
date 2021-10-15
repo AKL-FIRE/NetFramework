@@ -171,7 +171,7 @@ void test_class() {
   	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << (prefix) << ": size=" << m.size();                           \
   }
 
-  g_person->addListener(1, [](const Person& old_value, const Person& new_value) {
+  g_person->addListener([](const Person& old_value, const Person& new_value) {
 	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "old_value=" << old_value.toString() << " new_value=" << new_value.toString();
   });
 
@@ -199,10 +199,28 @@ void test_log() {
   SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
+void test_filelogappender() {
+  SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "hello";
+  YAML::Node root = YAML::LoadFile("/home/changyuli/Documents/Project/Repos/sylar/test/resource/log3.yml");
+  sylar::Config::LoadFromYAML(root);
+  SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "hello";
+}
+
+void test_visit() {
+  sylar::Config::Visit([](sylar::ConfigVarBase::ptr var) {
+	SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "name=" << var->getName()
+							 << " description=" << var->getDescription()
+							 << " typename=" << var->getTypeName()
+							 << " value=" << var->toString();
+  });
+}
+
 int main(int argc, char* argv[]) {
   // test_yaml();
   // test_config();
   // test_class();
-  test_log();
+  // test_log();
+  // test_filelogappender();
+  test_visit();
   return 0;
 }
