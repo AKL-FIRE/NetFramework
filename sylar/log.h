@@ -24,7 +24,7 @@
 #define SYLAR_LOG_LEVEL(logger, level) \
 	if ((logger)->getLevel() <= (level)) \
            sylar::LogEventWarp(std::make_shared<sylar::LogEvent>(logger, level, __FILE__, __LINE__, 0, \
-           sylar::GetThreadId(), sylar::GetFiberId(), time(nullptr))).getSS()
+           sylar::GetThreadId(), sylar::GetFiberId(), time(nullptr), sylar::Thread::GetName())).getSS()
 
 #define SYLAR_LOG_DEBUG(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
 #define SYLAR_LOG_INFO(logger) SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO)
@@ -35,7 +35,7 @@
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
 	if (logger->getLevel() <= level) \
 		sylar::LogEventWarp(std::make_shared<sylar::LogEvent>(logger, level, __FILE__, __LINE__, 0, \
-           sylar::GetThreadId(), sylar::GetFiberId(), time(nullptr))).getEvent()->format(fmt, __VA_ARGS__)
+           sylar::GetThreadId(), sylar::GetFiberId(), time(nullptr), sylar::Thread::GetName())).getEvent()->format(fmt, __VA_ARGS__)
 
 #define SYLAR_LOG_FMT_DEBUG(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_INFO(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::INFO, fmt, __VA_ARGS__)
@@ -70,7 +70,7 @@ class LogEvent {
  public:
   using ptr = std::shared_ptr<LogEvent>;
   LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* file, int32_t line, uint32_t elapse, uint32_t thread_id,
-		   uint32_t fiber_id, uint32_t time);
+		   uint32_t fiber_id, uint32_t time, std::string  thread_name);
   const char* getFile() const {return m_file;}
   int32_t getLine() const {return m_line;}
   uint32_t  getElapse() const {return m_elapse;}
@@ -81,6 +81,7 @@ class LogEvent {
   std::stringstream& getSS() {return m_ss;}
   std::shared_ptr<Logger> getLogger() const {return m_logger;}
   LogLevel::Level getLevel() const {return m_level;}
+  const std::string& getThreadName() const {return m_threadName;}
   void format(const char* fmt, ...);
   void format(const char* fmt, va_list list);
  private:
@@ -90,6 +91,7 @@ class LogEvent {
   uint32_t m_threadId = 0;       // 线程ＩＤ
   uint32_t m_fiberId = 0;        // 携程ＩＤ
   uint32_t m_time;               // 时间戳
+  std::string m_threadName;      // 线程名称
   std::stringstream m_ss;
   std::shared_ptr<Logger> m_logger;
   LogLevel::Level m_level;

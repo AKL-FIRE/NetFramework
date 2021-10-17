@@ -12,3 +12,13 @@ add_executable(test_thread test_thread.cpp)
 add_dependencies(test_thread sylar)
 target_link_libraries(test_thread sylar)
 force_redefine_file_macro_for_sources(test_thread)
+
+add_executable(test_util test_util.cpp)
+add_dependencies(test_util sylar)
+target_link_libraries(test_util sylar)
+force_redefine_file_macro_for_sources(test_util)
+
+add_executable(test_fiber test_fiber.cpp)
+add_dependencies(test_fiber sylar)
+target_link_libraries(test_fiber sylar)
+force_redefine_file_macro_for_sources(test_fiber)

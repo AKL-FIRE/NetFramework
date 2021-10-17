@@ -54,6 +54,14 @@ class ThreadIdFormatItem : public LogFormatter::FormatItem {
   }
 };
 
+class ThreadNameFormatItem : public LogFormatter::FormatItem {
+ public:
+  explicit ThreadNameFormatItem(const std::string& str = "") {}
+  void format(std::ostream& out, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override {
+	out << event->getThreadName();
+  }
+};
+
 class FiberIdFormatItem : public LogFormatter::FormatItem {
  public:
   explicit FiberIdFormatItem(const std::string& str = "") {}
@@ -127,7 +135,7 @@ class StringFormatItem : public LogFormatter::FormatItem {
 };
 
 Logger::Logger(std::string name) : m_name (std::move(name)), m_level(LogLevel::DEBUG) {
-  m_logformatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T[%p]%T[%c]%T%t%T%F%T%f:%l%T%m\n"));
+  m_logformatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m\n"));
 }
 
 void Logger::log(LogLevel::Level level, const LogEvent::ptr& event) {
@@ -381,17 +389,18 @@ void LogFormatter::init() {
 	  {#str, [](const std::string& fmt) {  \
 	    return std::static_pointer_cast<FormatItem>(std::make_shared<C>(fmt)); \
 	  }}
-	  XX(m, MessageFormatItem),
-	  XX(p, LevelFormatItem),
-	  XX(r, ElapseFormatItem),
-	  XX(c, NameFormatItem),
-	  XX(t, ThreadIdFormatItem),
-	  XX(n, NewLineFormatItem),
-	  XX(d, DateTimeFormatItem),
-	  XX(f, FileNameFormatItem),
-	  XX(l, LineFormatItem),
-	  XX(T, TabFormatItem),
-	  XX(F, FiberIdFormatItem)
+	  XX(m, MessageFormatItem),     // 消息
+	  XX(p, LevelFormatItem),       // 日志级别
+	  XX(r, ElapseFormatItem),      // 累计毫秒数
+	  XX(c, NameFormatItem),        // 日志名称
+	  XX(t, ThreadIdFormatItem),    // 线程id
+	  XX(n, NewLineFormatItem),     // 换行符
+	  XX(d, DateTimeFormatItem),    // 时间
+	  XX(f, FileNameFormatItem),    // 文件名
+	  XX(l, LineFormatItem),        // 行号
+	  XX(T, TabFormatItem),         // Tab
+	  XX(F, FiberIdFormatItem),     // 协程id
+	  XX(N, ThreadNameFormatItem)   // 线程名称
 #undef XX
   };
 
@@ -474,7 +483,8 @@ LogEvent::LogEvent(std::shared_ptr<Logger> logger,
 				   uint32_t elapse,
 				   uint32_t thread_id,
 				   uint32_t fiber_id,
-				   uint32_t time) :
+				   uint32_t time,
+				   std::string  thread_name) :
 				   m_file(file) ,
 				   m_line(line),
 				   m_elapse(elapse),
@@ -482,7 +492,8 @@ LogEvent::LogEvent(std::shared_ptr<Logger> logger,
 				   m_fiberId(fiber_id),
 				   m_time(time),
 				   m_logger(std::move(logger)),
-				   m_level(level) {
+				   m_level(level),
+				   m_threadName(std::move(thread_name)) {
 }
 
 void LogEvent::format(const char *fmt, ...) {

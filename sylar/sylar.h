@@ -9,5 +9,7 @@
 #include "config.h"
 #include "log.h"
 #include "thread.h"
+#include "macro.h"
+#include "fiber.h"
 
 #endif //SYLAR_SYLAR_SYLAR_H_
