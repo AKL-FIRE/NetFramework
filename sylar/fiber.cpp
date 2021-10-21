@@ -6,6 +6,7 @@
 #include "config.h"
 #include "macro.h"
 #include "log.h"
+#include "scheduler.h"
 
 #include <atomic>
 #include <utility>
@@ -38,7 +39,7 @@ class MallocStackAllocator {
 
 using StackAllocator = MallocStackAllocator;
 
-Fiber::Fiber(std::function<void()> cb, size_t stackSize)
+Fiber::Fiber(std::function<void()> cb, size_t stackSize, bool use_caller)
 	:m_id(++s_fiber_id),
 	m_cb(std::move(cb)) {
   ++s_fiber_count;
@@ -53,7 +54,11 @@ Fiber::Fiber(std::function<void()> cb, size_t stackSize)
   m_ctx.uc_stack.ss_sp = m_stack; // 设置新创建的栈地址
   m_ctx.uc_stack.ss_size = m_stacksize; // 设置新栈的大小
 
-  makecontext(&m_ctx, MainFunc, 0);
+  if (!use_caller) {
+	makecontext(&m_ctx, MainFunc, 0);
+  } else {
+	makecontext(&m_ctx, CallerMainFunc, 0);
+  }
   SYLAR_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
 }
 
@@ -104,14 +109,29 @@ void Fiber::swapIn() {
   m_state = EXEC;
 
   // 把主协程的上下文保存在t_threadFiber->m_ctx中，并激活当前上下文m_ctx
-  if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
+  if (swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
 	SYLAR_ASSERT2(false, "swapcontext");
   }
 }
 
 void Fiber::swapOut() {
-  SetThis(t_threadFiber.get());  // 设置当前协程为主协程
+  // SetThis(t_threadFiber.get());  // 设置当前协程为主协程
+  SetThis(Scheduler::GetMainFiber());
+  if (swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
+	SYLAR_ASSERT2(false, "swapcontext");
+  }
+}
 
+void Fiber::call() {
+  SetThis(this);
+  m_state = EXEC;
+  if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
+	SYLAR_ASSERT2(false, "swapcontext");
+  }
+}
+
+void Fiber::back() {
+  SetThis(t_threadFiber.get());
   if (swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
 	SYLAR_ASSERT2(false, "swapcontext");
   }
@@ -152,10 +172,14 @@ void Fiber::MainFunc() {
     cur->m_state = TERM;
   } catch (std::exception& ex) {
     cur->m_state = EXCEPT;
-	SYLAR_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what();
+	SYLAR_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
+	<< " fiber_id=" << cur->getId()
+	<< std::endl << BacktraceToString(10);
   } catch (...) {
 	cur->m_state = EXCEPT;
-	SYLAR_LOG_ERROR(g_logger) << "Fiber Except";
+	SYLAR_LOG_ERROR(g_logger) << "Fiber Except"
+		  << " fiber_id=" << cur->getId()
+	<< std::endl << BacktraceToString(10);
   }
 
   // 注意！！！
@@ -168,7 +192,39 @@ void Fiber::MainFunc() {
   cur.reset(); // 这里调用的是智能指针类的成员函数
   raw_ptr->swapOut();
 
-  SYLAR_ASSERT2(false, "never reach here");
+  SYLAR_ASSERT2(false, "never reach here fiber_id=" + std::to_string(raw_ptr->getId()));
+}
+
+void Fiber::CallerMainFunc() {
+  Fiber::ptr cur = GetThis(); // 获得当前协程
+  SYLAR_ASSERT(cur);
+  try {
+	cur->m_cb(); // 执行改协程的回调函数
+	cur->m_cb = nullptr;
+	cur->m_state = TERM;
+  } catch (std::exception& ex) {
+	cur->m_state = EXCEPT;
+	SYLAR_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
+							  << " fiber_id=" << cur->getId()
+							  << std::endl << BacktraceToString(10);
+  } catch (...) {
+	cur->m_state = EXCEPT;
+	SYLAR_LOG_ERROR(g_logger) << "Fiber Except"
+							  << " fiber_id=" << cur->getId()
+							  << std::endl << BacktraceToString(10);
+  }
+
+  // 注意！！！
+  /*
+   * 这里的cur智能指针的引用计数无法自动减一，
+   * 这是由于swapOut之后,这里的栈对象依旧存在，
+   * 因此我们需要手动给智能指针减一引用
+   * */
+  auto raw_ptr = cur.get();
+  cur.reset(); // 这里调用的是智能指针类的成员函数
+  raw_ptr->back();
+
+  SYLAR_ASSERT2(false, "never reach here fiber_id=" + std::to_string(raw_ptr->getId()));
 }
 
 Fiber::Fiber() {
@@ -195,5 +251,7 @@ uint64_t Fiber::GetFiberId() {
   }
   return 0;
 }
+
+
 
 }

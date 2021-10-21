@@ -22,3 +22,8 @@ add_executable(test_fiber test_fiber.cpp)
 add_dependencies(test_fiber sylar)
 target_link_libraries(test_fiber sylar)
 force_redefine_file_macro_for_sources(test_fiber)
+
+add_executable(test_scheduler test_scheduler.cpp)
+add_dependencies(test_scheduler sylar)
+target_link_libraries(test_scheduler sylar)
+force_redefine_file_macro_for_sources(test_scheduler)

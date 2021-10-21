@@ -29,13 +29,17 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
     EXCEPT // 异常状态
   };
 
-  Fiber(std::function<void()> cb, size_t stackSize = 0);
+  Fiber(std::function<void()> cb, size_t stackSize = 0, bool use_caller = false);
   ~Fiber();
 
   void reset(std::function<void()> cb); // 重置协程函数,并重置状态(INIT, TERM)
   void swapIn(); // 切换到当前协程（请求执行权）
-  void swapOut(); // 切换到后台（把执行权让出来给主协程）
+  void swapOut(); // 切换到后台（把执行权让出来给主协程
+  void call(); // 把当前线程置换成目标线程
+  void back();
   uint64_t getId() const {return m_id;}
+  const State& getState() const {return m_state;}
+  void setState(const State& state) {m_state = state;}
 
   static void SetThis(Fiber* f); // 设置当前协程
   static Fiber::ptr GetThis(); // 获取当前的子协程，如果不存在子协程，则创建一个主协程
@@ -43,6 +47,7 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
   static void YieldToHold(); //  当前协程切换到后台,并且设置为Hold状态
   static uint64_t TotalFibers(); // 返回总的协程数
   static void MainFunc(); // 协程执行的函数
+  static void CallerMainFunc(); // 协程执行的函数
   static uint64_t GetFiberId();
 
  private:
