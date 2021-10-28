@@ -153,7 +153,7 @@ void Logger::log(LogLevel::Level level, const LogEvent::ptr& event) {
 }
 
 void Logger::debug(LogEvent::ptr event) {
-  // debug(LogLevel::DEBUG, event);
+  // debug(LogLevel::DEBUG, events);
   log(LogLevel::DEBUG, event);
 }
 

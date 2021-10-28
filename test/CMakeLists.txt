@@ -27,3 +27,8 @@ add_executable(test_scheduler test_scheduler.cpp)
 add_dependencies(test_scheduler sylar)
 target_link_libraries(test_scheduler sylar)
 force_redefine_file_macro_for_sources(test_scheduler)
+
+add_executable(test_iomanager test_iomanager.cpp)
+add_dependencies(test_iomanager sylar)
+target_link_libraries(test_iomanager sylar)
+force_redefine_file_macro_for_sources(test_iomanager)

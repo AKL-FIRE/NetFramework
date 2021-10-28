@@ -5,7 +5,9 @@
 #include "util.h"
 #include "log.h"
 #include "fiber.h"
+
 #include <execinfo.h>
+#include <sys/time.h>
 
 namespace sylar {
 
@@ -45,4 +47,19 @@ std::string BacktraceToString(int size, int skip, const std::string& prefix) {
   }
   return ss.str();
 }
+
+uint64_t GetCurrentMS() {
+  timeval tv {};
+  gettimeofday(&tv, nullptr);
+  // 1s = 1000ms = 10^6 microseconds
+  return tv.tv_sec * 1000UL + tv.tv_usec / 1000;
+}
+
+uint64_t GetCurrentUS() {
+  timeval tv {};
+  gettimeofday(&tv, nullptr);
+  // 1s = 1000ms = 10^6 microseconds
+  return tv.tv_sec * 1000000UL + tv.tv_usec;
+}
+
 }

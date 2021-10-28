@@ -61,6 +61,8 @@ class Scheduler {
   virtual void idle(); // 无任务时执行
 
   void setThis();
+
+  bool hasIdleThreads() {return m_idleThreadCount > 0;}
  private:
   template <typename FiberOrCb>
   bool scheduleNoLock(FiberOrCb fc, int threadId) {
