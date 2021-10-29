@@ -51,6 +51,20 @@ void test1() {
   iom.schedule(test_fiber);
 }
 
+
+static sylar::Timer::ptr timer = nullptr;
+void test_timer() {
+  sylar::IOManager io_manager(2);
+   timer = io_manager.addTimer(1000, []() {
+	 static int i = 0;
+	 SYLAR_LOG_INFO(g_logger) << "Hello, Timer i=" << i;
+	 if (++i == 3) {
+	   // timer->cancel();
+	   timer->reset(2000, true);
+	 }}, true);
+}
+
 int main(int argc, char* argv[]) {
-  test1();
+  // test1();
+  test_timer();
 }
