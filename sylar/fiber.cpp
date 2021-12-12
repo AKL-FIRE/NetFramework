@@ -167,7 +167,7 @@ void Fiber::MainFunc() {
   Fiber::ptr cur = GetThis(); // 获得当前协程
   SYLAR_ASSERT(cur);
   try {
-    cur->m_cb(); // 执行改协程的回调函数
+    cur->m_cb(); // 执行该协程的回调函数
     cur->m_cb = nullptr;
     cur->m_state = TERM;
   } catch (std::exception& ex) {
