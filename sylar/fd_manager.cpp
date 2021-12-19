@@ -75,6 +75,9 @@ FdManager::FdManager() {
 }
 
 FdCtx::ptr FdManager::get(int fd, bool auto_create) {
+  if (fd == -1) {
+    return nullptr;
+  }
   RWMutexType::ReadLock lock(m_mutex);
   if (m_datas.size() <= fd) {
     // 这里fd越界
@@ -89,6 +92,9 @@ FdCtx::ptr FdManager::get(int fd, bool auto_create) {
 
   RWMutexType::WriteLock write_lock(m_mutex);
   auto ctx = std::make_shared<FdCtx>(fd);
+  if (fd >= (int)m_datas.size()) {
+    m_datas.resize(fd * 1.5);
+  }
   m_datas[fd] = ctx;
   return ctx;
 }

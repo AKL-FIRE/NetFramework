@@ -8,6 +8,7 @@
 // pthread
 // std::thread -> pthread
 #include "util.h"
+#include "noncopyable.h"
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -20,17 +21,13 @@
 
 namespace sylar {
 
-class Semaphore {
+class Semaphore : public NonCopyable {
  public:
   Semaphore(uint32_t count = 0);
-  ~Semaphore();
+  ~Semaphore() override;
 
   void wait();
   void notify();
-
-  Semaphore(const Semaphore&) = delete;
-  Semaphore(Semaphore&&) = delete;
-  Semaphore& operator=(const Semaphore&) = delete;
 
  private:
   sem_t m_semaphore;
@@ -67,7 +64,7 @@ struct ScopedLockImpl {
   bool m_locked;
 };
 
-class Mutex {
+class Mutex : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<Mutex>;
 
@@ -75,7 +72,7 @@ class Mutex {
 	pthread_mutex_init(&m_mutex, nullptr);
   }
 
-  ~Mutex() {
+  ~Mutex() override {
 	pthread_mutex_destroy(&m_mutex);
   }
 
@@ -91,11 +88,11 @@ class Mutex {
   pthread_mutex_t m_mutex;
 };
 
-class NullMutex {
+class NullMutex : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<Mutex>;
   NullMutex() = default;
-  ~NullMutex() = default;
+  ~NullMutex() override = default;
   void lock() {};
   void unlock() {};
 };
@@ -193,27 +190,27 @@ class RWMutex {
   pthread_rwlock_t m_lock;
 };
 
-class NullRWMutex {
+class NullRWMutex : public NonCopyable {
  public:
   using ReadLock = ReadScopedLockImpl<NullRWMutex>;
   using WriteLock = WriteScopedLockImpl<NullRWMutex>;
 
   NullRWMutex() = default;
-  ~NullRWMutex() = default;
+  ~NullRWMutex() override = default;
 
   void rdlock() {}
   void wrlock() {}
   void unlock() {}
 };
 
-class SpinLock {
+class SpinLock : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<SpinLock>;
   SpinLock() {
 	pthread_spin_init(&m_mutex, 0);
   }
 
-  ~SpinLock() {
+  ~SpinLock() override {
 	pthread_spin_destroy(&m_mutex);
   }
 
@@ -229,15 +226,14 @@ class SpinLock {
   pthread_spinlock_t m_mutex;
 };
 
-class CASLock {
+class CASLock : public NonCopyable {
  public:
   using Lock = ScopedLockImpl<CASLock>;
   CASLock() {
     m_mutex.clear();
   }
 
-  ~CASLock() {
-  }
+  ~CASLock() override = default;
 
   void lock() {
     // 一直自旋，直到取得锁(m_mutex)
@@ -252,11 +248,11 @@ class CASLock {
   volatile std::atomic_flag m_mutex;
 };
 
-class Thread {
+class Thread : public NonCopyable {
  public:
   using ptr = std::shared_ptr<Thread>;
   Thread(std::function<void()> cb, const std::string& name);
-  ~Thread();
+  ~Thread() override;
 
   pid_t getId() const {return m_id;}
   const std::string& getName() const {return m_name;}
@@ -265,10 +261,6 @@ class Thread {
   static Thread* GetThis();
   static const std::string& GetName();
   static void SetName(const std::string& name);
-
-  Thread(const Thread&) = delete;
-  Thread(Thread&&) = delete;
-  Thread& operator=(const Thread&) = delete;
 
  private:
   static void* run(void*);
