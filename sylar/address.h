@@ -1,12 +1,14 @@
 #ifndef SYLAR_SYLAR_ADDRESS_H_
 #define SYLAR_SYLAR_ADDRESS_H_
 
-#include <memory>
-#include <string>
-#include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/un.h>
+
+#include <memory>
+#include <string>
+#include <iostream>
 
 namespace sylar {
 
@@ -63,7 +65,8 @@ class IPv4Address : public IPAddress {
 class IPv6Address : public IPAddress {
   public:
     using ptr = std::shared_ptr<IPv6Address>;
-    IPv6Address(uint32_t address = INADDR_ANY, uint32_t port = 0);
+    IPv6Address();
+    IPv6Address(const char* address, uint32_t port = 0);
 
     const sockaddr* getAddr() const override;
     socklen_t getAddrLen() const override;
@@ -82,6 +85,7 @@ class IPv6Address : public IPAddress {
 class UnixAddress : public Address {
   public:
     using ptr = std::shared_ptr<UnixAddress>;
+    UnixAddress();
     UnixAddress(const std::string& path);
 
     const sockaddr* getAddr() const override;
@@ -96,6 +100,7 @@ class UnixAddress : public Address {
 class UnknowAddress : public Address {
   public:
     using ptr = std::shared_ptr<UnknowAddress>;
+    UnknowAddress(int family);
 
     const sockaddr* getAddr() const override;
     socklen_t getAddrLen() const override;

@@ -4,7 +4,6 @@ project(sylar)
 include(cmake/utils.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_C_STANDARD 99)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 include_directories(${CMAKE_SOURCE_DIR}/sylar)
