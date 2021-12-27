@@ -5,6 +5,8 @@ include(cmake/utils.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -fPIC -ggdb -Wall -Wno-builtin-macro-redefined -Wno-unused-function")
+set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -fPIC -ggdb -Wall -Wno-builtin-macro-redefined -Wno-unused-function")
 
 include_directories(${CMAKE_SOURCE_DIR}/sylar)
 

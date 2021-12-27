@@ -37,3 +37,8 @@ add_executable(test_hook test_hook.cpp)
 add_dependencies(test_hook sylar)
 target_link_libraries(test_hook sylar)
 force_redefine_file_macro_for_sources(test_hook)
+
+add_executable(test_address test_address.cpp)
+add_dependencies(test_address sylar)
+target_link_libraries(test_address sylar)
+force_redefine_file_macro_for_sources(test_address)
