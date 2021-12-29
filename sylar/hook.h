@@ -11,6 +11,7 @@
 #include <sys/uio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <cstdint>
 
 namespace sylar {
 
@@ -20,6 +21,9 @@ void set_hook_enable(bool flag);
 }
 
 extern "C" {
+
+  int connect_with_timeout(int sockfd, const struct sockaddr* addr,
+      socklen_t addrlen, uint64_t timeout_ms);
 
   // sleep 部分
   typedef unsigned int (*sleep_fun)(unsigned int seconds);

@@ -9,7 +9,8 @@ add_library(sylar SHARED
     timer.cpp
     hook.cpp
     fd_manager.cpp
-    address.cpp)
+    address.cpp
+    sylar_socket.cpp)
 target_link_libraries(sylar pthread yaml-cpp dl)
 force_redefine_file_macro_for_sources(sylar)
 #add_library(sylar_static STATIC log.cpp)

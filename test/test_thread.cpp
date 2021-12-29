@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 	threads.push_back(thr2);
   }
 
-  for (int i = 0; i < threads.size(); ++i) {
+  for (size_t i = 0; i < threads.size(); ++i) {
     threads[i]->join();
   }
   SYLAR_LOG_INFO(g_logger) << "thread test end";
