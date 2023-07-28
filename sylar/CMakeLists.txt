@@ -11,6 +11,6 @@ add_library(sylar SHARED
     fd_manager.cpp
     address.cpp
     sylar_socket.cpp)
-target_link_libraries(sylar pthread yaml-cpp dl)
+target_link_libraries(sylar pthread yaml-cpp dl Boost::boost)
 force_redefine_file_macro_for_sources(sylar)
 #add_library(sylar_static STATIC log.cpp)

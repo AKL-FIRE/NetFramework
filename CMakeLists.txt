@@ -8,6 +8,9 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -fPIC -ggdb -Wall -Wno-builtin-macro-redefined -Wno-unused-function")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -rdynamic -O3 -fPIC -ggdb -Wall -Wno-builtin-macro-redefined -Wno-unused-function")
 
+find_package(yaml-cpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS lexical_cast)
+
 include_directories(${CMAKE_SOURCE_DIR}/sylar)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

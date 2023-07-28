@@ -1,0 +1,7 @@
+[requires]
+yaml-cpp/0.7.0
+boost/1.82.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
